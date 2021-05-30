@@ -4,6 +4,8 @@ import java.io.Serializable;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeConstants;
+import org.joda.time.Days;
+import org.joda.time.LocalDate;
 import org.joda.time.Minutes;
 
 public class Game implements Comparable<Game>, Serializable {
@@ -22,6 +24,7 @@ public class Game implements Comparable<Game>, Serializable {
 	private static final int MAX_DRIVING = 720;
 	private static int seasonYear = 0;
 	private static int firstWeek = 0;
+	private static int daysInSeasonYear = 0;
 	
 	public Game(Stadium stadium, DateTime date) {
 		this.stadium = stadium;
@@ -33,6 +36,8 @@ public class Game implements Comparable<Game>, Serializable {
 		if (seasonYear == 0) {
 			seasonYear = date.getYear();
 			firstWeek = week;
+			LocalDate ld = new LocalDate(seasonYear, 1, 1);
+			daysInSeasonYear = Days.daysBetween(ld, ld.plusYears(1)).getDays();
 		}
 		if (week < firstWeek) {
 			week += 52;
@@ -45,6 +50,14 @@ public class Game implements Comparable<Game>, Serializable {
 	
 	public DateTime getDate() {
 		return date;
+	}
+	
+	public int getDayOfYear() {
+		int day = date.getDayOfYear();
+		if (date.getYear() != seasonYear) {
+			day += daysInSeasonYear;
+		}
+		return day;
 	}
 	
 	public int getWeek() {
@@ -63,7 +76,7 @@ public class Game implements Comparable<Game>, Serializable {
 		if (date.isAfter(g.date.minusMinutes(TIME_OF_GAME))) {
 			return false;
 		}
-		int dayDiff = g.date.getDayOfYear() - date.getDayOfYear();
+		int dayDiff = g.getDayOfYear() - this.getDayOfYear();
 		int drivingTime = stadium.getMinutesTo(g.stadium);
 		if (dayDiff == 0) {
 			return Minutes.minutesBetween(date.plusMinutes(TIME_OF_GAME), g.date).getMinutes() > drivingTime;
