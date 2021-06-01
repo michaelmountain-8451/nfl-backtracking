@@ -25,6 +25,7 @@ public class Game implements Comparable<Game>, Serializable {
 	private static int seasonYear = 0;
 	private static int firstWeek = 0;
 	private static int daysInSeasonYear = 0;
+	private static int firstDayOfSeason = 0;
 	
 	public Game(Stadium stadium, DateTime date) {
 		this.stadium = stadium;
@@ -38,6 +39,7 @@ public class Game implements Comparable<Game>, Serializable {
 			firstWeek = week;
 			LocalDate ld = new LocalDate(seasonYear, 1, 1);
 			daysInSeasonYear = Days.daysBetween(ld, ld.plusYears(1)).getDays();
+			firstDayOfSeason = date.getDayOfYear();
 		}
 		if (week < firstWeek) {
 			week += 52;
@@ -60,6 +62,10 @@ public class Game implements Comparable<Game>, Serializable {
 		return day;
 	}
 	
+	public int getDayOfSeason() {
+		return getDayOfYear() - firstDayOfSeason;
+	}
+	
 	public int getWeek() {
 		return week;
 	}
@@ -68,8 +74,20 @@ public class Game implements Comparable<Game>, Serializable {
 		return stadium.getIndex();
 	}
 	
+	public int getStartTime() {
+		return 1440 * getDayOfSeason() + date.getMinuteOfDay();
+	}
+	
 	public int getMinutesTo(Game g) {
 		return stadium.getMinutesTo(g.stadium);
+	}
+	
+	public int getMinutesTo(Stadium s) {
+		return stadium.getMinutesTo(s);
+	}
+	
+	public boolean canReachStrict(Game g) {
+		return Minutes.minutesBetween(date.plusMinutes(TIME_OF_GAME), g.date).getMinutes() > stadium.getMinutesTo(g.stadium);
 	}
 	
 	public boolean canReach(Game g) {
