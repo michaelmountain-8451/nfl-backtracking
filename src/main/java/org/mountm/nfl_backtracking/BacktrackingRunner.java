@@ -11,13 +11,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.joda.time.DateTime;
@@ -29,9 +23,6 @@ import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TShortObjectMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TShortObjectHashMap;
-import gnu.trove.procedure.TIntIntProcedure;
-import gnu.trove.procedure.TIntProcedure;
-import gnu.trove.procedure.TShortObjectProcedure;
 import gnu.trove.set.TIntSet;
 import gnu.trove.set.hash.TIntHashSet;
 
@@ -44,15 +35,15 @@ public class BacktrackingRunner {
 	private static final int NUMBER_OF_TEAMS = Stadium.values().length;
 	
 	private static int bestTripLength = Integer.MAX_VALUE;
-	private static List<Game> games = new ArrayList<>(270);
+	private static final List<Game> games = new ArrayList<>(270);
 	private static TShortObjectMap<TIntSet> noExtensions = new TShortObjectHashMap<>(270);
-	private static Set<Game> lastGamePerStadium = new HashSet<>(NUMBER_OF_TEAMS);
+	private static final Set<Game> lastGamePerStadium = new HashSet<>(NUMBER_OF_TEAMS);
 	private static TShortObjectMap<TIntIntMap> shortestPath = new TShortObjectHashMap<>(270);
 	private static int maxSize = 0;
 	private static int lastWeekOfSeason;
 	private static List<Game> bestSolution = new ArrayList<>(NUMBER_OF_TEAMS);
 	private static boolean foundSolution = false;
-	private static TShortObjectMap<Set<Game>> gamesPerWeek = new TShortObjectHashMap<>();
+	private static final TShortObjectMap<Set<Game>> gamesPerWeek = new TShortObjectHashMap<>();
 
 	public static void main(String[] args) {
 		
@@ -60,8 +51,8 @@ public class BacktrackingRunner {
 		
 		bestTripLength = Integer.MAX_VALUE;
 		List<Game> partial = new ArrayList<>(NUMBER_OF_TEAMS);
-		for (int i = 0; i < args.length; i++) {
-			Game g = games.get(parseInt(args[i]));
+		for (String arg : args) {
+			Game g = games.get(parseInt(arg));
 			if (haveVisitedStadium(partial, g.getStadium())) {
 				System.out.println("Trying to visit " + g.getStadium() + " twice!");
 				return;
@@ -109,19 +100,9 @@ public class BacktrackingRunner {
 	}
 
 	private static void prunePathData() {
-		shortestPath.retainEntries(new TShortObjectProcedure<TIntIntMap>(){
-
-			public boolean execute(short key, TIntIntMap innerMap) {
-				innerMap.retainEntries(new TIntIntProcedure() {
-
-					@Override
-					public boolean execute(int k, int v) {
-						return v <= bestTripLength;
-					}
-					
-				});
-				return !innerMap.isEmpty();
-			}
+		shortestPath.retainEntries((key, innerMap) -> {
+			innerMap.retainEntries((k, v) -> v <= bestTripLength);
+			return !innerMap.isEmpty();
 		});
 	}
 
@@ -130,9 +111,7 @@ public class BacktrackingRunner {
 		for (Game g: games) {
 			lastGameHere[g.stadiumIndex()] = g;
 		}
-		for (int i = 0; i < NUMBER_OF_TEAMS; i++) {
-			lastGamePerStadium.add(lastGameHere[i]);
-		}
+		lastGamePerStadium.addAll(Arrays.asList(lastGameHere).subList(0, NUMBER_OF_TEAMS));
 		
 		for (int i = 0; i < games.size() - 1; i++) {
 			Game g1 = games.get(i);
@@ -381,7 +360,7 @@ public class BacktrackingRunner {
 		int result = 0;
 		Game lastGame = partial.get(partial.size() - 1);
 		EnumSet<Stadium> visited = EnumSet.noneOf(Stadium.class);
-		visited.addAll(partial.stream().map(g -> g.getStadium()).collect(Collectors.toSet()));
+		visited.addAll(partial.stream().map(Game::getStadium).collect(Collectors.toSet()));
 		int lastWeekOfPartial = lastGame.getWeek();
 		for (int i = lastWeekOfPartial; i <= lastWeekOfSeason; i++) {
 			result += gamesPerWeek.get((short) i).stream()
@@ -397,14 +376,12 @@ public class BacktrackingRunner {
 			TIntSet previouslyConsidered = noExtensions.get(key);
 			int val = calculateValue(partial);
 			// forEach returns false if the iteration terminated early
-			return !previouslyConsidered.forEach(new TIntProcedure() {
-				// execute returns true if additional operations are allowed;
-				// i.e. if the number we're testing was not a match for the new partial solution
-				public boolean execute (int test) {
-					// A & B == B iff all 1 bits in B are also 1 bits in A
-					// meaning the stadium masks in B are all also in A (extra stadiums in A are allowed)
-					return (test & val) != val;
-				}
+			// execute returns true if additional operations are allowed;
+// i.e. if the number we're testing was not a match for the new partial solution
+			return !previouslyConsidered.forEach(test -> {
+				// A & B == B iff all 1 bits in B are also 1 bits in A
+				// meaning the stadium masks in B are all also in A (extra stadiums in A are allowed)
+				return (test & val) != val;
 			});
 		}
 		return false;
@@ -428,13 +405,9 @@ public class BacktrackingRunner {
 			TIntIntMap previouslyConsidered = shortestPath.get(key);
 			int val = calculateValue(partial);
 			// forEach returns false if the iteration terminated early
-			return !previouslyConsidered.forEachEntry(new TIntIntProcedure() {
-				// execute returns true if additional operations are allowed;
-				// i.e. if the number we're testing was not a match for the new partial solution
-				public boolean execute (int k, int v) {
-					return ((k & val) != val || v >= tripLength);
-				}
-			});
+			// execute returns true if additional operations are allowed;
+// i.e. if the number we're testing was not a match for the new partial solution
+			return !previouslyConsidered.forEachEntry((k, v) -> ((k & val) != val || v >= tripLength));
 		}
 		
 		return false;
@@ -449,7 +422,7 @@ public class BacktrackingRunner {
 			return 0;
 		}
 		EnumSet<Stadium> notVisited = EnumSet.allOf(Stadium.class);
-		Integer tripLength = 0;
+		int tripLength = 0;
 		for (int i = 0; i < partial.size(); i++) {
 			notVisited.remove(partial.get(i).getStadium());
 			if (i > 0) {
@@ -457,7 +430,7 @@ public class BacktrackingRunner {
 			}
 		}
 		Stadium last = partial.get(partial.size() - 1).getStadium();
-		int padding = notVisited.stream().mapToInt(s -> last.getMinutesTo(s)).max().orElse(0);
+		int padding = notVisited.stream().mapToInt(last::getMinutesTo).max().orElse(0);
 		return tripLength + padding;
 	}
 

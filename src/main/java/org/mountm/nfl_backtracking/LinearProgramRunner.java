@@ -6,13 +6,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import org.joda.time.DateTime;
 import org.joda.time.LocalTime;
@@ -23,17 +18,17 @@ public class LinearProgramRunner {
 
 	private static final String GAME_FILE = "Games.csv";
 
-	private static List<Game> games = new ArrayList<>(270);
-	private static Map<Game, Set<Game>> gamesLeavingGame = new HashMap<>();
-	private static Set<Game> firstGamePerStadium = new HashSet<>();
-	private static Set<Game> lastGamePerStadium = new HashSet<>();
-	private static Map<Stadium, List<String>> arcsLeavingStadium = new HashMap<>();
-	private static Map<Stadium, List<String>> arcsArrivingStadium = new HashMap<>();
-	private static Map<Game, List<String>> arcsLeavingGame = new HashMap<>();
-	private static Map<Game, List<String>> arcsArrivingGame = new HashMap<>();
+	private static final List<Game> games = new ArrayList<>(270);
+	private static final Map<Game, Set<Game>> gamesLeavingGame = new HashMap<>();
+	private static final Set<Game> firstGamePerStadium = new HashSet<>();
+	private static final Set<Game> lastGamePerStadium = new HashSet<>();
+	private static final Map<Stadium, List<String>> arcsLeavingStadium = new HashMap<>();
+	private static final Map<Stadium, List<String>> arcsArrivingStadium = new HashMap<>();
+	private static final Map<Game, List<String>> arcsLeavingGame = new HashMap<>();
+	private static final Map<Game, List<String>> arcsArrivingGame = new HashMap<>();
 
-	private static List<String> regularArcs = new ArrayList<>();
-	private static List<String> magicArcs = new ArrayList<>();
+	private static final List<String> regularArcs = new ArrayList<>();
+	private static final List<String> magicArcs = new ArrayList<>();
 
 	public static void main(String[] args) {
 
@@ -212,7 +207,7 @@ public class LinearProgramRunner {
 		Game[] lastGameHere = new Game[Stadium.values().length];
 		for (int i = 0; i < games.size(); i++) {
 			Game g1 = games.get(i);
-			if (!firstGamePerStadium.stream().map(Game::getStadium).anyMatch(s -> s.equals(g1.getStadium()))) {
+			if (firstGamePerStadium.stream().map(Game::getStadium).noneMatch(s -> s.equals(g1.getStadium()))) {
 				firstGamePerStadium.add(g1);
 			}
 			lastGameHere[g1.getStadium().getIndex()] = g1;
@@ -244,10 +239,8 @@ public class LinearProgramRunner {
 				}
 			}
 		}
-		
-		for (int i = 0; i < Stadium.values().length; i++) {
-			lastGamePerStadium.add(lastGameHere[i]);
-		}
+
+		lastGamePerStadium.addAll(Arrays.asList(lastGameHere).subList(0, Stadium.values().length));
 		
 		for (Game g1: lastGamePerStadium) {
 			for (Game g2: firstGamePerStadium) {
