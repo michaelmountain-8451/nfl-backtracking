@@ -1,11 +1,12 @@
 package org.mountm.nfl_backtracking;
 
 import java.io.Serializable;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 import org.joda.time.DateTime;
-import org.joda.time.DateTimeConstants;
-import org.joda.time.Days;
-import org.joda.time.LocalDate;
 import org.joda.time.Minutes;
 
 public class Game implements Comparable<Game>, Serializable {
@@ -14,105 +15,75 @@ public class Game implements Comparable<Game>, Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = -5433969714606317194L;
-	private Stadium stadium;
-	private DateTime date;
-	private int week;
-	
+	private final Stadium stadium;
+	private final DateTime date;
+	private final int index;
+
 	private static final int TIME_OF_GAME = 240;
 	private static final int NINE_AM = 32400000;
 	private static final int TEN_PM = 79200000;
 	private static final int MAX_DRIVING = 720;
-	private static int seasonYear = 0;
-	private static int firstWeek = 0;
-	private static int daysInSeasonYear = 0;
-	private static int firstDayOfSeason = 0;
-	
+	private static Map<Integer, Integer> restDaysAllowedPerGameDay = new HashMap<>();
+
+
+
+	public Game(Stadium stadium, DateTime date, int index) {
+		this.stadium = stadium;
+		this.date = date;
+		this.index = index;
+	}
+
 	public Game(Stadium stadium, DateTime date) {
 		this.stadium = stadium;
 		this.date = date;
-		week = date.getWeekOfWeekyear();
-		if (date.getDayOfWeek() == DateTimeConstants.MONDAY) {
-			week--;
-		}
-		if (seasonYear == 0) {
-			seasonYear = date.getYear();
-			firstWeek = week;
-			LocalDate ld = new LocalDate(seasonYear, 1, 1);
-			daysInSeasonYear = Days.daysBetween(ld, ld.plusYears(1)).getDays();
-			firstDayOfSeason = date.getDayOfYear();
-		}
-		if (week < firstWeek) {
-			week += 52;
-		}
+		index = 0;
 	}
 	
 	public Stadium getStadium() {
 		return stadium;
 	}
-	
-	public DateTime getDate() {
-		return date;
-	}
-	
-	public int getDayOfYear() {
-		int day = date.getDayOfYear();
-		if (date.getYear() != seasonYear) {
-			day += daysInSeasonYear;
-		}
-		return day;
-	}
-	
-	public int getDayOfSeason() {
-		return getDayOfYear() - firstDayOfSeason;
-	}
-	
-	public int getWeek() {
-		return week;
-	}
-	
-	public int stadiumIndex() {
-		return stadium.getIndex();
-	}
-	
-	public int getStartTime() {
-		return 1440 * getDayOfSeason() + date.getMinuteOfDay();
-	}
-	
+
 	public int getMinutesTo(Game g) {
 		return stadium.getMinutesTo(g.stadium);
 	}
-	
-	public int getMinutesTo(Stadium s) {
-		return stadium.getMinutesTo(s);
-	}
-	
-	public boolean canReachStrict(Game g) {
-		return Minutes.minutesBetween(date.plusMinutes(TIME_OF_GAME), g.date).getMinutes() > stadium.getMinutesTo(g.stadium);
+
+	public int getStartTime() {
+		return 1440 * date.getDayOfYear() + date.getMinuteOfDay();
 	}
 	
 	public boolean canReach(Game g) {
-		if (date.isAfter(g.date.minusMinutes(TIME_OF_GAME))) {
+		if (g.stadium.equals(stadium)) {
 			return false;
 		}
-		int dayDiff = g.getDayOfYear() - this.getDayOfYear();
-		int drivingTime = stadium.getMinutesTo(g.stadium);
+		int daysOff = g.date.getDayOfYear() - date.getDayOfYear() - 1;
+		if (restDaysAllowedPerGameDay.get(date.getDayOfYear()) < daysOff) {
+			return false;
+		}
+		// no days off!
+		// unless it is the all-star break, then you have a days' gap
+//		if (dayDiff > 4 || (dayDiff > 1 && date.getDayOfYear() != ALL_STAR_BREAK_START_DAY) || dayDiff < 0) {
+//			return false;
+//		}
+		return canReachStrict(g);
+	}
+
+	public boolean canReachStrict(Game g) {
+		// return Minutes.minutesBetween(date.plusMinutes(TIME_OF_GAME), g.date).getMinutes() > getMinutesTo(g);
+		int dayDiff = g.date.getDayOfYear() - date.getDayOfYear();
+		int drivingTime = getMinutesTo(g);
 		if (dayDiff == 0) {
-			return Minutes.minutesBetween(date.plusMinutes(TIME_OF_GAME), g.date).getMinutes() > drivingTime;
+			return Minutes.minutesBetween(date.plusMinutes(TIME_OF_GAME), g.date).getMinutes() > getMinutesTo(g);
 		}
-		int drivingAfterGame = Minutes.minutesBetween(date.plusMinutes(TIME_OF_GAME),
-				date.withMillisOfDay(TEN_PM).plusHours(stadium.getTimeZone())).getMinutes();
-		if (drivingAfterGame > 0) {
-			drivingTime -= drivingAfterGame;
-		}
+		drivingTime -= Math.max(Minutes.minutesBetween(date.plusMinutes(TIME_OF_GAME), date.withMillisOfDay(TEN_PM).plusHours(stadium.getTimeZone())).getMinutes(), 0);
+
+		// if there's a dedicated travel day, you can drive up to 12 hours
 		while (dayDiff > 1 && drivingTime > 0) {
 			drivingTime -= MAX_DRIVING;
 			dayDiff--;
 		}
-		if (dayDiff == 1) {
-			return Minutes.minutesBetween(g.date.withMillisOfDay(NINE_AM).plusHours(g.stadium.getTimeZone()),
-					g.date).getMinutes() > drivingTime;
-		}
-		return true;
+		// if the travel day was enough to get all the drive time completed, you're good
+		// otherwise, you need to be able to make it to the game after leaving no later than 9 AM
+		return drivingTime <= 0 || Minutes.minutesBetween(g.date.withMillisOfDay(NINE_AM).plusHours(g.stadium.getTimeZone()), g.date).getMinutes() > drivingTime;
 	}
 	
 	@Override
@@ -121,7 +92,11 @@ public class Game implements Comparable<Game>, Serializable {
 	}
 	
 	public String getShortString() {
-		return stadium + date.toString("MMMdd");
+		return stadium + date.toString("MMdd");
+	}
+
+	public String getTinyString() {
+		return "g" + Integer.toHexString(index);
 	}
 	
 
@@ -151,11 +126,23 @@ public class Game implements Comparable<Game>, Serializable {
 		if (stadium != other.stadium)
 			return false;
 		if (date == null) {
-			if (other.date != null)
-				return false;
-		} else if (!date.equals(other.date))
-			return false;
-		return true;
+			return other.date == null;
+		} else return date.equals(other.date);
 	}
 
+	public int dayOfYear() {
+		return date.getDayOfYear();
+	}
+
+	public int stadiumIndex() {
+		return stadium.getIndex();
+	}
+
+	public DateTime getDate() {
+		return date;
+	}
+
+	public static void setMap(Map<Integer, Integer> map) {
+		restDaysAllowedPerGameDay = map;
+	}
 }
