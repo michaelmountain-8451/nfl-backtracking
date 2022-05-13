@@ -6,7 +6,7 @@ public enum Stadium {
 	BAL (4,0), CIN (5,0), CLE (6,0), PIT (7,0),
 	HOU (8,1), IND (9,1), JAX(10,0), TEN(11,1),
 	DEN(12,2), KC (13,1), LV (14,3), LAC(15,3),
-	DAL(16,1), NYG(17,0), PHI(18,0), WSH(19,0),
+	DAL(16,1), NYG(17,0), PHI(18,0), WAS(19,0),
 	CHI(20,1), DET(21,0), GB (22,1), MIN(23,1),
 	ATL(24,0), CAR(25,0), NO (26,1), TB (27,0),
 	ARI(28,2), LAR(29,3), SF (30,3), SEA(31,3);

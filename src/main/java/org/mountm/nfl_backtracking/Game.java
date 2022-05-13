@@ -14,8 +14,8 @@ public class Game implements Comparable<Game>, Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = -5433969714606317194L;
-	private Stadium stadium;
-	private DateTime date;
+	private final Stadium stadium;
+	private final DateTime date;
 	private int week;
 	
 	private static final int TIME_OF_GAME = 240;
@@ -74,16 +74,8 @@ public class Game implements Comparable<Game>, Serializable {
 		return stadium.getIndex();
 	}
 	
-	public int getStartTime() {
-		return 1440 * getDayOfSeason() + date.getMinuteOfDay();
-	}
-	
 	public int getMinutesTo(Game g) {
 		return stadium.getMinutesTo(g.stadium);
-	}
-	
-	public int getMinutesTo(Stadium s) {
-		return stadium.getMinutesTo(s);
 	}
 	
 	public boolean canReachStrict(Game g) {
@@ -95,23 +87,25 @@ public class Game implements Comparable<Game>, Serializable {
 			return false;
 		}
 		int dayDiff = g.getDayOfYear() - this.getDayOfYear();
+		// uncomment the block below to enforce driving restraints
+		// comment it out to assume next-day flights are possible everywhere
 		int drivingTime = stadium.getMinutesTo(g.stadium);
 		if (dayDiff == 0) {
 			return Minutes.minutesBetween(date.plusMinutes(TIME_OF_GAME), g.date).getMinutes() > drivingTime;
 		}
-		int drivingAfterGame = Minutes.minutesBetween(date.plusMinutes(TIME_OF_GAME),
-				date.withMillisOfDay(TEN_PM).plusHours(stadium.getTimeZone())).getMinutes();
-		if (drivingAfterGame > 0) {
-			drivingTime -= drivingAfterGame;
-		}
-		while (dayDiff > 1 && drivingTime > 0) {
-			drivingTime -= MAX_DRIVING;
-			dayDiff--;
-		}
-		if (dayDiff == 1) {
-			return Minutes.minutesBetween(g.date.withMillisOfDay(NINE_AM).plusHours(g.stadium.getTimeZone()),
-					g.date).getMinutes() > drivingTime;
-		}
+//		int drivingAfterGame = Minutes.minutesBetween(date.plusMinutes(TIME_OF_GAME),
+//				date.withMillisOfDay(TEN_PM).plusHours(stadium.getTimeZone())).getMinutes();
+//		if (drivingAfterGame > 0) {
+//			drivingTime -= drivingAfterGame;
+//		}
+//		while (dayDiff > 1 && drivingTime > 0) {
+//			drivingTime -= MAX_DRIVING;
+//			dayDiff--;
+//		}
+//		if (dayDiff == 1) {
+//			return Minutes.minutesBetween(g.date.withMillisOfDay(NINE_AM).plusHours(g.stadium.getTimeZone()),
+//					g.date).getMinutes() > drivingTime;
+//		}
 		return true;
 	}
 	
@@ -151,11 +145,8 @@ public class Game implements Comparable<Game>, Serializable {
 		if (stadium != other.stadium)
 			return false;
 		if (date == null) {
-			if (other.date != null)
-				return false;
-		} else if (!date.equals(other.date))
-			return false;
-		return true;
+			return other.date == null;
+		} else return date.equals(other.date);
 	}
 
 }

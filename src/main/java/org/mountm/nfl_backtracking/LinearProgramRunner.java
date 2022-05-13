@@ -16,7 +16,7 @@ import org.joda.time.format.DateTimeFormatter;
 
 public class LinearProgramRunner {
 
-	private static final String GAME_FILE = "Games.csv";
+	private static final String GAME_FILE = "2022 Games.csv";
 
 	private static final List<Game> games = new ArrayList<>(270);
 	private static final Map<Game, Set<Game>> gamesLeavingGame = new HashMap<>();
@@ -275,7 +275,7 @@ public class LinearProgramRunner {
 			String currentLine;
 			String[] gameData;
 			br = new BufferedReader(new FileReader(GAME_FILE));
-			DateTimeFormatter dateFormat = DateTimeFormat.forPattern("dd-MMM-yyyy");
+			DateTimeFormatter dateFormat = DateTimeFormat.forPattern("yyyy-MM-dd");
 			DateTimeFormatter timeFormat = DateTimeFormat.forPattern("HH:mm");
 			while ((currentLine = br.readLine()) != null) {
 				gameData = currentLine.split(",");
