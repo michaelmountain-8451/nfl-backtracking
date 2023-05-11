@@ -2,11 +2,7 @@ package org.mountm.nfl_backtracking;
 
 import java.io.Serializable;
 
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeConstants;
-import org.joda.time.Days;
-import org.joda.time.LocalDate;
-import org.joda.time.Minutes;
+import org.joda.time.*;
 
 public class Game implements Comparable<Game>, Serializable {
 	
@@ -25,7 +21,7 @@ public class Game implements Comparable<Game>, Serializable {
 	private static int seasonYear = 0;
 	private static int firstWeek = 0;
 	private static int daysInSeasonYear = 0;
-	private static int firstDayOfSeason = 0;
+	private static Game firstGame = null;
 	
 	public Game(Stadium stadium, DateTime date) {
 		this.stadium = stadium;
@@ -39,7 +35,7 @@ public class Game implements Comparable<Game>, Serializable {
 			firstWeek = week;
 			LocalDate ld = new LocalDate(seasonYear, 1, 1);
 			daysInSeasonYear = Days.daysBetween(ld, ld.plusYears(1)).getDays();
-			firstDayOfSeason = date.getDayOfYear();
+			firstGame = this;
 		}
 		if (week < firstWeek) {
 			week += 52;
@@ -63,7 +59,14 @@ public class Game implements Comparable<Game>, Serializable {
 	}
 	
 	public int getDayOfSeason() {
-		return getDayOfYear() - firstDayOfSeason;
+		return getDayOfYear();
+	}
+
+	public int getHourOfSeason() {
+		return Hours.hoursBetween(firstGame.date, date).getHours();
+	}
+	public int getStartTime() {
+		return Minutes.minutesBetween(firstGame.date, date).getMinutes();
 	}
 	
 	public int getWeek() {
