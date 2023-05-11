@@ -306,6 +306,8 @@ public class DistanceMinimizationRunner {
 		int maxAdditionalRestDaysAllowed = totalDays - Stadium.values().length - daysWithoutGames.size();
 		if (maxAdditionalRestDaysAllowed < 0) {
 			System.out.println("Negative rest days allowed!");
+		} else if (maxAdditionalRestDaysAllowed == 0) {
+			System.out.println("0 rest days allowed!");
 		}
 		if (maxAdditionalRestDaysAllowed > 0) {
 			daysWithFewGames.addAll(IntStream.rangeClosed(firstGameDay, lastGameDay).filter(i -> games.stream().filter(g -> g.dayOfYear() == i).count() < 20).boxed().sorted().collect(Collectors.toList()));

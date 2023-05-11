@@ -19,11 +19,16 @@ public class Game implements Comparable<Game>, Serializable {
 	private final DateTime date;
 	private final int index;
 
+	private static int DATETIME_OFFSET = 0;
 	private static final int TIME_OF_GAME = 240;
 	private static final int NINE_AM = 32400000;
 	private static final int TEN_PM = 79200000;
 	private static final int MAX_DRIVING = 720;
 	private static Map<Integer, Integer> restDaysAllowedPerGameDay = new HashMap<>();
+
+	public static void setOffset(int offset) {
+		DATETIME_OFFSET = offset;
+	}
 
 
 
@@ -31,6 +36,9 @@ public class Game implements Comparable<Game>, Serializable {
 		this.stadium = stadium;
 		this.date = date;
 		this.index = index;
+		if (DATETIME_OFFSET == 0) {
+			DATETIME_OFFSET = 1440 * date.getDayOfYear() + date.getMinuteOfDay();
+		}
 	}
 
 	public Game(Stadium stadium, DateTime date) {
@@ -48,7 +56,7 @@ public class Game implements Comparable<Game>, Serializable {
 	}
 
 	public int getStartTime() {
-		return 1440 * date.getDayOfYear() + date.getMinuteOfDay();
+		return 1440 * date.getDayOfYear() + date.getMinuteOfDay() - DATETIME_OFFSET;
 	}
 	
 	public boolean canReach(Game g) {

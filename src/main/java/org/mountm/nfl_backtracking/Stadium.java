@@ -34,7 +34,7 @@ public enum Stadium {
 
 	private final int index;
 
-	private final int timeZone;
+	private int timeZone;
 
 	private static int[][] minutesBetween;
 
