@@ -106,37 +106,6 @@ public class LinearProgramRunner {
 
 			// for each game,
 			for (Game g : games) {
-				// sum of arcs arriving at game must be less than or equal to
-				// one
-				constraint = "";
-				for (String arc : arcsArrivingGame.get(g)) {
-					constraint += arc;
-					if (constraint.length() >= 500) {
-						bw.write(constraint);
-						bw.newLine();
-						constraint = "";
-					}
-					constraint += " + ";
-				}
-				constraint = constraint.substring(0, constraint.length() - 3) + " <= 1";
-				bw.write(constraint);
-				bw.newLine();
-
-				// sum of arcs departing game must be less than or equal to one
-				constraint = "";
-				for (String arc : arcsLeavingGame.get(g)) {
-					constraint += arc;
-					if (constraint.length() >= 500) {
-						bw.write(constraint);
-						bw.newLine();
-						constraint = "";
-					}
-					constraint += " + ";
-				}
-				constraint = constraint.substring(0, constraint.length() - 3) + " <= 1";
-				bw.write(constraint);
-				bw.newLine();
-
 				// sum of arriving arcs must equal sum of departing arcs
 				constraint = "";
 				for (String arc : arcsArrivingGame.get(g)) {
@@ -279,10 +248,10 @@ public class LinearProgramRunner {
 			DateTimeFormatter timeFormat = DateTimeFormat.forPattern("HH:mm");
 			while ((currentLine = br.readLine()) != null) {
 				gameData = currentLine.split(",");
-				DateTime startTime = timeFormat.parseDateTime(gameData[3]);
-				DateTime startDateTime = dateFormat.parseDateTime(gameData[2])
+				DateTime startTime = timeFormat.parseDateTime(gameData[2]);
+				DateTime startDateTime = dateFormat.parseDateTime(gameData[1])
 						.withTime(LocalTime.fromMillisOfDay(startTime.getMillisOfDay()));
-				Stadium stadium = Stadium.valueOf(gameData[1]);
+				Stadium stadium = Stadium.valueOf(gameData[0]);
 				games.add(new Game(stadium, startDateTime));
 			}
 		} catch (IOException e) {
