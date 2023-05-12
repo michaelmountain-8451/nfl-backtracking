@@ -56,7 +56,7 @@ public class GAMS2DRunner {
             bw.write(illegalGames + "." + legalGames + ",\n#i.#s." + illegalGames);
             bw.newLine();
             bw.write(" / ;\n");
-            bw.write("Alias (g,gg);\nAlias (s,ss);\nAlias (i,ii);\nScalar gameLength / 240 / ;\n");
+            bw.write("Alias (g,gg);\nAlias (s,ss);\nAlias (i,ii);\nScalar gameLength / 240 / ;\nScalar overnight / 700 / ;\n");
             bw.write(";\nTable travelTime(s,ss)\n         ");
             for (Stadium s : Stadium.values()) {
                 String label = s + "  ";
@@ -106,7 +106,8 @@ public class GAMS2DRunner {
                     // and not if they are illegal (i.e. game indices that don't exist)
                     "magic(illegal) = no;\n"+
                     // legal arcs connect forwards in time as long as the travel time is shorter than the difference between start times
-                    "legal(i,s,ii,ss)$(startTime(ii,ss) > startTime(i,s) AND (travelTime(s,ss) < (startTime(ii,ss) - startTime(i,s) - gameLength))) = yes;\n" +
+                    // or if the two games are on different days, then a flight is OK (but you still pay the travel cost in the objective function)
+                    "legal(i,s,ii,ss)$(startTime(ii,ss) > startTime(i,s) AND ((travelTime(s,ss) < (startTime(ii,ss) - startTime(i,s) - gameLength)) OR overnight < (startTime(ii,ss) - startTime(i,s)))) = yes;\n" +
                     // but not if they connect the same stadium
                     "legal(i,s,ii,s) = no;\n" +
                     // and not if they are illegal (i.e. game indices that don't exist)
